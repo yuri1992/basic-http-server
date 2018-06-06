@@ -201,6 +201,10 @@ void receiveMessage(int index)
 	int len = sockets[index].len;
 	int bytesRecv = recv(msgSocket, &sockets[index].buffer[len], sizeof(sockets[index].buffer) - len, 0);
 
+	time_t currTime;
+	time(&currTime);
+	sockets[index].lastReqTime = currTime;
+
 	if (SOCKET_ERROR == bytesRecv)
 	{
 		cout << "Time Server: Error at recv(): " << WSAGetLastError() << endl;
