@@ -6,17 +6,7 @@ using namespace std;
 #include <time.h>
 #include "HttpRequest.h"
 #include "HttpResponse.h"
-
-struct SocketState
-{
-	SOCKET id;			// Socket handle
-	int	recv;			// Receiving?
-	int	send;			// Sending?
-	HttpRequest request;	// Sending sub-type
-	time_t lastReqTime;	// Time of Last Pack
-	char buffer[128];
-	int len;
-};
+#include "SocketManager.h"
 
 const int TIME_PORT = 27015;
 const int TIME_OUT = 120;
@@ -28,12 +18,6 @@ const int IDLE = 3;
 const int SEND = 4;
 const int SEND_TIME = 1;
 const int SEND_SECONDS = 2;
-
-bool addSocket(SOCKET id, int what);
-void removeSocket(int index);
-void acceptConnection(int index);
-void receiveMessage(int index);
-void sendMessage(int index);
 
 struct SocketState sockets[MAX_SOCKETS] = { 0 };
 int socketsCount = 0;
@@ -163,7 +147,7 @@ bool addSocket(SOCKET id, int what)
 			sockets[i].id = id;
 			sockets[i].recv = what;
 			sockets[i].send = IDLE;
-			sockets[i].response = IDLE;
+			sockets[i].request = NULL;
 			sockets[i].len = 0;
 			socketsCount++;
 			return (true);
@@ -251,7 +235,7 @@ void sendMessage(int index)
 	char* sendBuff;
 
 	SOCKET msgSocket = sockets[index].id;
-	resp = HttpResonse(sockets[index].request);
+	HttpResponse resp = HttpResponse(sockets[index].request);
 	sendBuff = resp.getBuffer();
 	bytesSent = send(msgSocket, sendBuff, (int)strlen(sendBuff), 0);
 	if (SOCKET_ERROR == bytesSent)

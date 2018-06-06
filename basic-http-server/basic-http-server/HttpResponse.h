@@ -10,7 +10,8 @@ class HttpResponse
 	char **headers;
 	char *responseData;
 public:
-	HttpResponse();
+	HttpResponse(HttpRequest request);
 	~HttpResponse();
+	char* getBuffer();
 };
 

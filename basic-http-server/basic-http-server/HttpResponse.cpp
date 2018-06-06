@@ -2,11 +2,17 @@
 #include "HttpResponse.h"
 
 
-HttpResponse::HttpResponse()
+HttpResponse::HttpResponse(HttpRequest request)
+{
+}
+
+HttpResponse::~HttpResponse()
 {
 }
 
 
-HttpResponse::~HttpResponse()
+char* HttpResponse::getBuffer()
 {
+	// TODO: Add your implementation code here.
+	return ;
 }
