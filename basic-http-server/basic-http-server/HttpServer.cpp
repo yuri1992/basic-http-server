@@ -59,3 +59,10 @@ int HttpServer::doHead()
 	// TODO: Add your implementation code here.
 	return 0;
 }
+
+
+int HttpServer::dispatch()
+{
+	// TODO: Add your implementation code here.
+	return 0;
+}
