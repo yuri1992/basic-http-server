@@ -1,3 +1,5 @@
+#include "SocketManager.h";
+
 #pragma once
 class HttpRequest
 {
@@ -13,7 +15,12 @@ class HttpRequest
 	char *rawRequest;
 	int HTTPVersion;
 public:
-	HttpRequest();
+	HttpRequest(char * buf, int size);
+	void parseMethod(char ** buf, int size);
+	void parsePath(char ** buf, int size);
+	static HttpRequest* fromBuffer(char* buf, int size);
+
 	~HttpRequest();
+
 };
 

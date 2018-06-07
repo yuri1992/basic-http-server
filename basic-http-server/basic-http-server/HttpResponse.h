@@ -1,5 +1,3 @@
-#pragma once
-#include "HttpRequest.h"
 
 class HttpResponse
 {
@@ -10,7 +8,7 @@ class HttpResponse
 	char **headers;
 	char *responseData;
 public:
-	HttpResponse(HttpRequest request);
+	HttpResponse(HttpRequest* request);
 	~HttpResponse();
 	char* getBuffer();
 };

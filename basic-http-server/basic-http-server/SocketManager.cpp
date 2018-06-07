@@ -147,7 +147,7 @@ bool addSocket(SOCKET id, int what)
 			sockets[i].id = id;
 			sockets[i].recv = what;
 			sockets[i].send = IDLE;
-			sockets[i].request = NULL;
+			sockets[i].request = nullptr;
 			sockets[i].len = 0;
 			socketsCount++;
 			return (true);
@@ -222,12 +222,14 @@ void receiveMessage(int index)
 	{
 		sockets[index].buffer[len + bytesRecv] = '\0'; //add the null-terminating to make it a string
 		cout << "Time Server: Recieved: " << bytesRecv << " bytes of \"" << &sockets[index].buffer[len] << "\" message.\n";
-
 		sockets[index].len += bytesRecv;
-
 		if (sockets[index].len > 0)
 		{
-			// Todo Add Request Parsing Logic
+			HttpRequest* resp = new HttpRequest(sockets[index].buffer, sockets[index].len);
+			if (resp != nullptr) {
+				sockets[index].request = resp;
+				sockets[index].send = SEND;
+			}
 		}
 	}
 
