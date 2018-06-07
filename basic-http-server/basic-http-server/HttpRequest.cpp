@@ -10,6 +10,24 @@ HttpRequest::HttpRequest(char* buf, int size)
 	this->parsePath(&buf, size);
 }
 
+
+void HttpRequest::parsePath(char** buf, int size) {
+	char *token = strtok(*buf, " ");
+	int len = strlen(token) + 1;
+
+	this->path = (char *)malloc(sizeof(token) * 1) + 1;
+	strcpy(this->path, token);
+	*buf += strlen(this->path) + 1;
+}
+
+void HttpRequest::parseHttpVersion(char** buf, int size) {
+
+}
+
+void HttpRequest::parseHeaders(char** buf, int size) {
+
+}
+
 void HttpRequest::parseMethod(char** buf, int size) {
 	char* method = strtok(*buf, " ");
 
