@@ -1,5 +1,5 @@
+#include "stdafx.h"
 #include "HttpServer.h"
-#include "HttpRequest.h"
 #include <fstream>
 
 
@@ -13,23 +13,31 @@ HttpServer::~HttpServer()
 }
 
 
+
 HttpResponse HttpServer::doDelete(HttpRequest* req)
 {
 	HttpResponse resp = HttpResponse(req);
 	struct stat sb;
 
-	if ((stat(req->getFullPath, &sb) == 0) && (sb.st_mode & S_IFDIR)) { 
+	if (stat(req->getFullPath(), &sb) == 0) {
 		resp.responseCode = 404;
+		resp.responseData = new char[strlen(FILE_NOT_DELETED)];
+		strcpy(resp.responseData, FILE_NOT_DELETED);
 		return resp;
 	}
 
-	// Consider maybe to throw exception instead of changing server response
-
-	int removeFile = remove(req->getFullPath);
-	if (removeFile == 0)
+	int removeFile = remove(req->getFullPath());
+	if (removeFile == 0) {
 		resp.responseCode = 404;
-	else
+		resp.responseData = new char[strlen(FILE_NOT_DELETED)];
+		strcpy(resp.responseData, FILE_NOT_DELETED);
+	}
+	else {
 		resp.responseCode = 202;
+		resp.responseData = new char[strlen(FILE_DELETED)];
+		strcpy(resp.responseData, FILE_DELETED);
+	}
+
 
 	return resp;
 }
@@ -40,19 +48,22 @@ HttpResponse HttpServer::doGet(HttpRequest* req)
 	HttpResponse resp = HttpResponse(req);
 	FILE *f = fopen(req->getFullPath(), "rb");
 
-	//Todo: Allow throwing http errors
-	//if (f == nullptr)
-	//	throw HTTPError();
+	if (f == nullptr) {
+		resp.responseCode = 404;
+		strcpy(resp.responseData, FILE_NOT_FOUND);
+		return resp;
+	}
 
 	fseek(f, 0, SEEK_END);
 	long fsize = ftell(f);
 	fseek(f, 0, SEEK_SET);
 
-	resp.responesText = (char *)malloc(fsize + 1);
-	fread(resp.responesText, fsize, 1, f);
+	resp.responseData = new char[fsize + 1];
+	fread(resp.responseData, fsize, 1, f);
 	fclose(f);
 
-	resp.responesText[fsize] = '\0';
+	resp.responseData[fsize] = '\0';
+	resp.responseCode = 200;
 	return resp;
 }
 
@@ -84,7 +95,7 @@ HttpResponse HttpServer::doPut(HttpRequest* req)
 {
 	HttpResponse resp = HttpResponse(req);
 	FILE *f = NULL;
-	// Create all sub directories needed
+	// Todo: Create all sub directories needed
 	f = fopen(req->getFullPath(), "w");
 	fprintf(f, "%s", req->requestData);
 	resp.responseCode = 201;
@@ -102,28 +113,38 @@ HttpResponse HttpServer::doHead(HttpRequest* req)
 	return nullptr;
 }
 
+HttpResponse HttpServer::doException(HttpRequest* req) {
+	HttpResponse resp = HttpResponse(req);
+	resp.responseCode = 500;
+	return resp;
+}
 
 HttpResponse HttpServer::dispatch(HttpRequest* req)
 {
+	HttpResponse resp = nullptr;
+
 	if (req->method == GET) {
-		return this->doGet(req);
+		resp = HttpServer::doGet(req);
 	}
 	else if (req->method == HEAD) {
-		return this->doHead(req);
+		resp = HttpServer::doHead(req);
 	}
 	else if (req->method == OPTIONS) {
-		return this->doOption(req);
+		resp = HttpServer::doOption(req);
 	}
 	else if (req->method == PUT) {
-		return this->doPut(req);
+		resp = HttpServer::doPut(req);
 	}
 	else if (req->method == TRACE) {
-		return this->doTrace(req);
+		resp = HttpServer::doTrace(req);
 	}
-	else if (req->method == DELETE) {
-		return this->doDelete(req);
+	else if (req->method == MDELETE) {
+		resp = HttpServer::doDelete(req);
 	}
-	
-	return nullptr;
+	else {
+		resp = HttpServer::doException(req);
+
+	}
+
+	return resp;
 }
- 

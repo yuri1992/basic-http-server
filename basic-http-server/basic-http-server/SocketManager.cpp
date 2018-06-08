@@ -1,12 +1,16 @@
+#include "stdafx.h"
 #include <iostream>
 using namespace std;
 // Don't forget to include "Ws2_32.lib" in the library list.
 #include <winsock2.h>
 #include <string.h>
 #include <time.h>
+
+#include "SocketManager.h"
 #include "HttpRequest.h"
 #include "HttpResponse.h"
-#include "SocketManager.h"
+#include "HttpServer.h"
+
 
 const int TIME_PORT = 27015;
 const int TIME_OUT = 120;
@@ -21,7 +25,6 @@ const int SEND_SECONDS = 2;
 
 struct SocketState sockets[MAX_SOCKETS] = { 0 };
 int socketsCount = 0;
-
 
 void main()
 {
@@ -241,7 +244,7 @@ void sendMessage(int index)
 	char* sendBuff;
 
 	SOCKET msgSocket = sockets[index].id;
-	HttpResponse resp = HttpResponse(sockets[index].request);
+	HttpResponse resp = HttpServer::dispatch(sockets[index].request);
 	sendBuff = resp.getBuffer();
 	bytesSent = send(msgSocket, sendBuff, (int)strlen(sendBuff), 0);
 	if (SOCKET_ERROR == bytesSent)

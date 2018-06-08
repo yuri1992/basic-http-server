@@ -1,5 +1,13 @@
 #include "stdafx.h"
+#include <string>
 #include "HttpRequest.h"
+
+const char *ROOT_FOLDER = "C:\\www";
+const char *FILE_CREATED = "<html>\n<body>\n<h1>The file was created.</h1>\n</body>\n</html>";
+const char *FILE_NOT_CREATED = "<html>\n<body>\n<h1>The file was not created.</h1>\n</body>\n</html>";
+const char *FILE_DELETED = "<html>\n<body>\n<h1>The file was deleted.</h1>\n</body>\n</html>";
+const char *FILE_NOT_DELETED = "<html>\n<body>\n<h1>The file was not deleted.</h1>\n</body>\n</html>";
+const char *FILE_NOT_FOUND = "<html>\n<body>\n<h1>The file was not found.</h1>\n</body>\n</html>";
 
 
 HttpRequest::HttpRequest(char* buf, int size)
@@ -8,6 +16,8 @@ HttpRequest::HttpRequest(char* buf, int size)
 	this->requestData = buf;
 	this->parseMethod(&buf, size);
 	this->parsePath(&buf, size);
+	this->parseHttpVersion(&buf, size);
+	this->parseHeaders(&buf, size);
 }
 
 
@@ -28,14 +38,14 @@ void HttpRequest::parseHttpVersion(char** buf, int size) {
 
 char * HttpRequest::getFullPath()
 {
-	char *path = (char *)malloc(strnlen(this->path) + strlen(ROOT_FOLDER) + 1);
+	char *path = (char *)malloc(strlen(this->path) + strlen(ROOT_FOLDER) + 1);
 	strcpy(path, ROOT_FOLDER);
 	strcat(path, this->path);
 	return path;
 }
 
 void HttpRequest::parseHeaders(char** buf, int size) {
-
+	// Todo: Parse Headers from client
 }
 
 void HttpRequest::parseMethod(char** buf, int size) {
@@ -85,5 +95,5 @@ HttpRequest::~HttpRequest()
 		free(this->path);
 
 	if (this->HTTPVersion)
-		free(this->HTTPVersion)
+		free(this->HTTPVersion);
 }

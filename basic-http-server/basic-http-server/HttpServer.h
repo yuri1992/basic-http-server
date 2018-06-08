@@ -1,20 +1,28 @@
+#ifndef _HTTP_SERVER_
+#define _HTTP_SERVER_
 
-enum methods { GET = 0, HEAD = 1, OPTIONS = 2, PUT = 3, MDELETE = 4, TRACE = 5, POST = 6, ILLEGAL = 7, enumSize = 8 };
-const char ROOT_FOLDER[256] = "C:\\www";
+
+#include <cstdio>
+#include <cstring>
+#include "HttpRequest.h";
+#include "HttpResponse.h";
+
+
 
 class HttpServer
 {
 public:
 	HttpServer();
 	~HttpServer();
-		
-	HttpResponse doDelete(HttpRequest* req);
-	HttpResponse doGet(HttpRequest* req);
-	HttpResponse doPost(HttpRequest* req);
-	HttpResponse doTrace(HttpRequest* req);
-	HttpResponse doOption(HttpRequest* req);
-	HttpResponse doPut(HttpRequest* req);
-	HttpResponse doHead(HttpRequest* req);
-	HttpResponse dispatch(HttpRequest * req);
-};
 
+	static HttpResponse doDelete(HttpRequest* req);
+	static HttpResponse doGet(HttpRequest* req);
+	static HttpResponse doPost(HttpRequest* req);
+	static HttpResponse doTrace(HttpRequest* req);
+	static HttpResponse doOption(HttpRequest* req);
+	static HttpResponse doPut(HttpRequest* req);
+	static HttpResponse doHead(HttpRequest* req);
+	static HttpResponse doException(HttpRequest * req);
+	static HttpResponse dispatch(HttpRequest * req);
+};
+#endif
