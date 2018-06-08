@@ -1,5 +1,6 @@
 #include "HttpServer.h"
-
+#include "HttpRequest.h"
+#include <fstream>
 
 
 HttpServer::HttpServer()
@@ -12,57 +13,117 @@ HttpServer::~HttpServer()
 }
 
 
-int HttpServer::doDelete()
+HttpResponse HttpServer::doDelete(HttpRequest* req)
 {
-	// TODO: Add your implementation code here.
-	return 0;
+	HttpResponse resp = HttpResponse(req);
+	struct stat sb;
+
+	if ((stat(req->getFullPath, &sb) == 0) && (sb.st_mode & S_IFDIR)) { 
+		resp.responseCode = 404;
+		return resp;
+	}
+
+	// Consider maybe to throw exception instead of changing server response
+
+	int removeFile = remove(req->getFullPath);
+	if (removeFile == 0)
+		resp.responseCode = 404;
+	else
+		resp.responseCode = 202;
+
+	return resp;
 }
 
 
-int HttpServer::doGet()
+HttpResponse HttpServer::doGet(HttpRequest* req)
 {
-	// TODO: Add your implementation code here.
-	return 0;
+	HttpResponse resp = HttpResponse(req);
+	FILE *f = fopen(req->getFullPath(), "rb");
+
+	//Todo: Allow throwing http errors
+	//if (f == nullptr)
+	//	throw HTTPError();
+
+	fseek(f, 0, SEEK_END);
+	long fsize = ftell(f);
+	fseek(f, 0, SEEK_SET);
+
+	resp.responesText = (char *)malloc(fsize + 1);
+	fread(resp.responesText, fsize, 1, f);
+	fclose(f);
+
+	resp.responesText[fsize] = '\0';
+	return resp;
 }
 
 
-int HttpServer::doPost()
+HttpResponse HttpServer::doPost(HttpRequest* req)
 {
 	// TODO: Add your implementation code here.
-	return 0;
+	return nullptr;
 }
 
 
-int HttpServer::doTrace()
+HttpResponse HttpServer::doTrace(HttpRequest* req)
 {
 	// TODO: Add your implementation code here.
-	return 0;
+	return nullptr;
 }
 
 
-int HttpServer::doOption()
+HttpResponse HttpServer::doOption(HttpRequest* req)
 {
-	// TODO: Add your implementation code here.
-	return 0;
+	/*
+	We should not do anything special- just return the headers
+	*/
+	return nullptr;
 }
 
 
-int HttpServer::doPut()
+HttpResponse HttpServer::doPut(HttpRequest* req)
 {
-	// TODO: Add your implementation code here.
-	return 0;
+	HttpResponse resp = HttpResponse(req);
+	FILE *f = NULL;
+	// Create all sub directories needed
+	f = fopen(req->getFullPath(), "w");
+	fprintf(f, "%s", req->requestData);
+	resp.responseCode = 201;
+
+	// Todo: set response code depending on the status create/update/error/
+	return resp;
 }
 
 
-int HttpServer::doHead()
+HttpResponse HttpServer::doHead(HttpRequest* req)
 {
-	// TODO: Add your implementation code here.
-	return 0;
+	/*
+		Head method not invoke any special logic, just return a pure data.
+	*/
+	return nullptr;
 }
 
 
-int HttpServer::dispatch()
+HttpResponse HttpServer::dispatch(HttpRequest* req)
 {
-	// TODO: Add your implementation code here.
-	return 0;
+	if (req->method == GET) {
+		return this->doGet(req);
+	}
+	else if (req->method == HEAD) {
+		return this->doHead(req);
+	}
+	else if (req->method == OPTIONS) {
+		return this->doOption(req);
+	}
+	else if (req->method == PUT) {
+		return this->doPut(req);
+	}
+	else if (req->method == TRACE) {
+		return this->doTrace(req);
+	}
+	else if (req->method == DELETE) {
+		return this->doDelete(req);
+	}
+	
+	return nullptr;
 }
+ 

@@ -14,14 +14,24 @@ HttpRequest::HttpRequest(char* buf, int size)
 void HttpRequest::parsePath(char** buf, int size) {
 	char *token = strtok(*buf, " ");
 	int len = strlen(token) + 1;
-
-	this->path = (char *)malloc(sizeof(token) * 1) + 1;
+	this->path = (char *)malloc(sizeof(token) * 1 + 1);
 	strcpy(this->path, token);
 	*buf += strlen(this->path) + 1;
 }
 
 void HttpRequest::parseHttpVersion(char** buf, int size) {
+	char *token = strtok(*buf, " \n");
+	this->HTTPVersion = (char *)malloc(sizeof(token) * 1 + 1);
+	strcpy(this->HTTPVersion, token);
+	*buf += strlen(this->HTTPVersion) + 1;
+}
 
+char * HttpRequest::getFullPath()
+{
+	char *path = (char *)malloc(strnlen(this->path) + strlen(ROOT_FOLDER) + 1);
+	strcpy(path, ROOT_FOLDER);
+	strcat(path, this->path);
+	return path;
 }
 
 void HttpRequest::parseHeaders(char** buf, int size) {
@@ -68,4 +78,12 @@ void HttpRequest::parseMethod(char** buf, int size) {
 
 HttpRequest::~HttpRequest()
 {
+	if (this->fullFilePath)
+		free(this->fullFilePath);
+
+	if (this->path)
+		free(this->path);
+
+	if (this->HTTPVersion)
+		free(this->HTTPVersion)
 }
