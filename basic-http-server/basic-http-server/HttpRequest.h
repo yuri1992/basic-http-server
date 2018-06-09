@@ -26,6 +26,7 @@ public:
 	char *HTTPVersion;
 
 	void parseHeaders(char ** buf, int size);
+	void parseRequestData(char ** buf, int size);
 	void parseMethod(char ** buf, int size);
 	void parsePath(char ** buf, int size);
 	void parseHttpVersion(char ** buf, int size);

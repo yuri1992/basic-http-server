@@ -72,7 +72,7 @@ void main()
 		FD_ZERO(&waitRecv);
 		for (int i = 0; i < MAX_SOCKETS; i++)
 		{
-			if ((sockets[i].recv == LISTEN) || (sockets[i].recv == RECEIVE))
+			if ((sockets[i].status == LISTEN) || (sockets[i].status == RECEIVE))
 				FD_SET(sockets[i].id, &waitRecv);
 		}
 
@@ -80,7 +80,7 @@ void main()
 		FD_ZERO(&waitSend);
 		for (int i = 0; i < MAX_SOCKETS; i++)
 		{
-			if (sockets[i].send == SEND)
+			if (sockets[i].status == SEND)
 				FD_SET(sockets[i].id, &waitSend);
 		}
 
@@ -98,7 +98,7 @@ void main()
 			if (FD_ISSET(sockets[i].id, &waitRecv))
 			{
 				nfd--;
-				switch (sockets[i].recv)
+				switch (sockets[i].status)
 				{
 				case LISTEN:
 					acceptConnection(i);
@@ -116,7 +116,7 @@ void main()
 			if (FD_ISSET(sockets[i].id, &waitSend))
 			{
 				nfd--;
-				switch (sockets[i].send)
+				switch (sockets[i].status)
 				{
 				case SEND:
 					sendMessage(i);
@@ -129,7 +129,7 @@ void main()
 		time(&timer);
 		for (int i = 0; i < MAX_SOCKETS; i++)
 		{
-			if ((sockets[i].send == SEND) && (timer - sockets[i].lastReqTime >= TIME_OUT))
+			if ((sockets[i].status == SEND) && (timer - sockets[i].lastReqTime >= TIME_OUT))
 			{
 				closesocket(sockets[i].id);
 				removeSocket(i);
@@ -145,11 +145,10 @@ bool addSocket(SOCKET id, int what)
 {
 	for (int i = 0; i < MAX_SOCKETS; i++)
 	{
-		if (sockets[i].recv == EMPTY)
+		if (sockets[i].status == EMPTY)
 		{
 			sockets[i].id = id;
-			sockets[i].recv = what;
-			sockets[i].send = IDLE;
+			sockets[i].status = what;
 			sockets[i].request = nullptr;
 			sockets[i].len = 0;
 			socketsCount++;
@@ -161,8 +160,8 @@ bool addSocket(SOCKET id, int what)
 
 void removeSocket(int index)
 {
-	sockets[index].recv = EMPTY;
-	sockets[index].send = EMPTY;
+	sockets[index].status = EMPTY;
+	free(sockets[index].buffer);
 	socketsCount--;
 }
 
@@ -200,9 +199,11 @@ void acceptConnection(int index)
 void receiveMessage(int index)
 {
 	SOCKET msgSocket = sockets[index].id;
-
+	
+	sockets[index].buffer = new char[2048];
+	int bufferSize = 2048;
 	int len = sockets[index].len;
-	int bytesRecv = recv(msgSocket, &sockets[index].buffer[len], sizeof(sockets[index].buffer) - len, 0);
+	int bytesRecv = recv(msgSocket, &sockets[index].buffer[len], bufferSize - len, 0);
 
 	time_t currTime;
 	time(&currTime);
@@ -223,19 +224,26 @@ void receiveMessage(int index)
 	}
 	else
 	{
-		sockets[index].buffer[len + bytesRecv] = '\0'; //add the null-terminating to make it a string
-		cout << "Time Server: Recieved: " << bytesRecv << " bytes of \"" << &sockets[index].buffer[len] << "\" message.\n";
-		sockets[index].len += bytesRecv;
+		while (true) {
+			sockets[index].buffer[len + bytesRecv] = '\0'; //add the null-terminating to make it a string
+			cout << "Time Server: Recieved: " << bytesRecv << " bytes of \"" << &sockets[index].buffer[len] << "\" message.\n";
+			sockets[index].len += bytesRecv;
+
+			len = sockets[index].len;
+			bytesRecv = recv(msgSocket, &sockets[index].buffer[len], bufferSize - len, 0);
+			if (bytesRecv <= 0)
+				break;
+		}
+
 		if (sockets[index].len > 0)
 		{
 			HttpRequest* resp = new HttpRequest(sockets[index].buffer, sockets[index].len);
 			if (resp != nullptr) {
 				sockets[index].request = resp;
-				sockets[index].send = SEND;
+				sockets[index].status = SEND;
 			}
 		}
 	}
-
 }
 
 void sendMessage(int index)
@@ -255,5 +263,5 @@ void sendMessage(int index)
 
 	cout << "Time Server: Sent: " << bytesSent << "\\" << strlen(sendBuff) << " bytes of \"" << sendBuff << "\" message.\n";
 
-	sockets[index].send = IDLE;
+	sockets[index].status = IDLE;
 }

@@ -20,6 +20,7 @@ public:
 	static HttpResponse doPost(HttpRequest* req);
 	static HttpResponse doTrace(HttpRequest* req);
 	static HttpResponse doOption(HttpRequest* req);
+	static bool createFolders(char * path);
 	static HttpResponse doPut(HttpRequest* req);
 	static HttpResponse doHead(HttpRequest* req);
 	static HttpResponse doException(HttpRequest * req);

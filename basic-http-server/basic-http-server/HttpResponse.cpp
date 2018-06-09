@@ -17,11 +17,14 @@ void HttpResponse::setHeader(const char* key, const char* value) {
 	// Alocating extra place for next header
 	this->numberOfHeaders++;
 	char** headersTemp = new char*[this->numberOfHeaders];
-	std::copy(this->headers, this->headers + this->numberOfHeaders, headersTemp);
+	if (this->headers) {
+		std::copy(this->headers, this->headers + (this->numberOfHeaders - 1), headersTemp);
+	}
+
 	this->headers = headersTemp;
 
 	// Concat the key + value and inserting to matrix
-	char *header = (char *)malloc(sizeof(char) * (strlen(key) + strlen(value) + 1));
+	char *header = new char[(strlen(key) + strlen(value) + 1)];
 	strcpy(header, key);
 	strcat(header, value);
 	header[strlen(header)] = '\0';
@@ -29,26 +32,26 @@ void HttpResponse::setHeader(const char* key, const char* value) {
 }
 
 void HttpResponse::prepareHeaders() {
-	this->setHeader("Connection: ", "Closed");
-	this->setHeader("Content-Type: ", " text/html");
+	this->setHeader("Connection: ", "close");
+	this->setHeader("Content-Type: ", "text/html");
 	this->setHeader("Server: ", "Windows Server 1.0v");
 	this->setHeader("Date: ", this->getDateTime());
-	this->setHeader("Content-Length: ", this->getContentLength());
+	if (this->responseData) {
+		this->setHeader("Content-Length: ", this->getContentLength());
+	}
 }
 
 char * HttpResponse::getContentLength() {
-	size_t responseLen = 0;
 	size_t temp = 0;
-	int responseLenDigits = 0;
+	int responseLenDigits = 1;
 	char *buf = NULL;
 
-	responseLen = strlen(this->responseData);
-	temp = responseLen;
+	temp = this->getResponseDataLength();
 	while (0 != temp) { responseLenDigits++; temp /= 10; }
 	if (0 == responseLenDigits) { responseLenDigits++; }
 
-	buf = (char *)malloc(sizeof(char) * responseLenDigits + 1);
-	sprintf(buf, "%d", responseLen);
+	buf = new char[responseLenDigits + 1];
+	sprintf(buf, "%d", this->getResponseDataLength());
 	buf[responseLenDigits] = '\0';
 	return buf;
 }
@@ -61,11 +64,20 @@ char * HttpResponse::getDateTime()
 
 	struct tm *tm = localtime(&t);
 	char s[64];
-
-	strftime(s, sizeof(s), "%c", tm);
-	char* ret = new char[len + dateLen + 2];
+	
+	//Sat, 09 Jun 2018 13:45:09 GMT
+	strftime(s, sizeof(s), "%a, %d %b %Y %T", tm);
+	char* ret = new char[strlen(s) + 1];
 	strcpy(ret, s);
+	ret[strlen(s)] = '\0';
 	return ret;
+}
+
+int HttpResponse::getResponseDataLength()
+{
+	if (this->responseData == nullptr)
+		return 0;
+	return strlen(this->responseData);
 }
 
 void HttpResponse::setResponseCodeText()
@@ -73,16 +85,25 @@ void HttpResponse::setResponseCodeText()
 	switch (responseCode) {
 		case 200:
 			strcpy(responseCodeText, HTTP_200);
+			break;
 		case 201:
 			strcpy(responseCodeText, HTTP_201);
+			break;
 		case 202:
 			strcpy(responseCodeText, HTTP_202);
+			break;
+		case 204:
+			strcpy(responseCodeText, HTTP_204);
+			break;
 		case 404:
 			strcpy(responseCodeText, HTTP_404);
+			break;
 		case 500:
 			strcpy(responseCodeText, HTTP_500);
+			break;
 		default:
 			strcpy(responseCodeText, HTTP_400);
+			break;
 	}
 }
 
@@ -100,7 +121,7 @@ char* HttpResponse::getBuffer()
 	this->complete();
 
 	int currentLength = 0;
-	char *buf = new char[1024 + strlen(this->responseData)];
+	char *buf = new char[1024 + this->getResponseDataLength()];
 
 	strcpy(buf, this->request->HTTPVersion);
 	strcat(buf, " ");
@@ -109,14 +130,15 @@ char* HttpResponse::getBuffer()
 	strcat(buf, responseCodeStr);
 	strcat(buf, " ");
 	strcat(buf, this->responseCodeText);
-	strcat(buf, "\n");
+	strcat(buf, " \n");
 
 	for (int i = 0; i < this->numberOfHeaders; i++) {
 		strcat(buf, this->headers[i]);
 		strcat(buf, "\n");
 	}
-	strcat(buf, "\n");
 	
+	strcat(buf, "\n");
+
 	if (this->responseData) {
 		strcat(buf, this->responseData);
 		strcat(buf, "\n");

@@ -18,34 +18,62 @@ HttpRequest::HttpRequest(char* buf, int size)
 	this->parsePath(&buf, size);
 	this->parseHttpVersion(&buf, size);
 	this->parseHeaders(&buf, size);
+	this->parseRequestData(&buf, size);
 }
 
 
 void HttpRequest::parsePath(char** buf, int size) {
 	char *token = strtok(*buf, " ");
 	int len = strlen(token) + 1;
-	this->path = (char *)malloc(sizeof(token) * 1 + 1);
+	this->path = new char[strlen(token) + 1];
 	strcpy(this->path, token);
 	*buf += strlen(this->path) + 1;
 }
 
 void HttpRequest::parseHttpVersion(char** buf, int size) {
-	char *token = strtok(*buf, " \n");
-	this->HTTPVersion = (char *)malloc(sizeof(token) * 1 + 1);
+	char *token = strtok(*buf, " \r\n");
+	this->HTTPVersion = new char[strlen(token) + 1];
 	strcpy(this->HTTPVersion, token);
 	*buf += strlen(this->HTTPVersion) + 1;
 }
 
 char * HttpRequest::getFullPath()
 {
-	char *path = (char *)malloc(strlen(this->path) + strlen(ROOT_FOLDER) + 1);
+	char *path = new char[strlen(this->path) + strlen(ROOT_FOLDER) + 1];
 	strcpy(path, ROOT_FOLDER);
 	strcat(path, this->path);
 	return path;
 }
 
 void HttpRequest::parseHeaders(char** buf, int size) {
-	// Todo: Parse Headers from client
+	int headerNum = 0;
+	char** headersTemp = NULL;
+	char* tmp = new char[strlen(*buf)];
+	strcpy(tmp, *buf);
+	char* header = strtok(tmp, "\n");
+	while (header && strlen(header) > 1) {
+		headerNum++;
+		headersTemp = new char*[headerNum];
+		if (this->headers) {
+			std::copy(this->headers, this->headers + (headerNum - 1), headersTemp);
+		}
+		this->headers = headersTemp;
+		this->headers[headerNum - 1] = new char[strlen(header) + 1];
+		strcpy(this->headers[headerNum - 1], header);
+		this->headers[headerNum - 1][strlen(header)] = '\0';
+		*buf += strlen(header) + 1;
+		header = strtok(NULL, "\n");
+	}
+	this->numberOfHeaders = headerNum;
+	*buf += 1;
+
+}
+
+void HttpRequest::parseRequestData(char** buf, int size) {
+	if (buf) {
+		this->requestData = new char[strlen(*buf)];
+		strcpy(this->requestData, *buf);
+	}
 }
 
 void HttpRequest::parseMethod(char** buf, int size) {
@@ -83,7 +111,7 @@ void HttpRequest::parseMethod(char** buf, int size) {
 		this->method = ILLEGAL;
 	}
 
-	*buf += 1;
+	*buf+= 1 ;
 }
 
 HttpRequest::~HttpRequest()
